@@ -3,18 +3,18 @@ import streamlit as st
 from streamlit_option_menu import option_menu
 import requests
 import pandas as pd
-from ast import literal_eval
 
-## Function Request Analyize Article for ALL Emiten.
+## Function request predict news topic for single data.
 def analyze_single_data(news : str):
     r = requests.post(f"http://127.0.0.1:8000/predict_single_data/?news_title={news}")
     return r
 
-## Function Request Analyize Article for Spesific Emiten.
+## Function request predict news topic for multiple data.
 def analyze_data_collection(news : list):
     t = requests.post(f"http://127.0.0.1:8000/predict_data_collection/?news_title={news}")
     return t
 
+## Function to download file 
 def download_file():
     # Logic to generate or fetch the file to be downloaded
     file_content = "This is the content of the file."
@@ -39,18 +39,19 @@ with st.sidebar:
     }
     )
 
-## Analyize Article for ALL Emiten.
-if choose == "Single Data":
-    st.markdown(""" <style> .font {
+## Title and Subtitle Section
+st.markdown(""" <style> .font {
         font-size:35px ; font-family: 'Cooper Black'; color: #FF9633;} 
         </style> """, unsafe_allow_html=True)
-    st.markdown('<p class="font">News Topic Classification</p>', unsafe_allow_html=True)    
-    st.subheader("Indonesian Language News Topic Multiclassification")
+st.markdown('<p class="font">News Topic Classification</p>', unsafe_allow_html=True)    
+st.subheader("Indonesian Language News Topic Multiclassification")
 
+## UI for Predict single data
+if choose == "Single Data":
     st.caption("Predict Single Data")
     with st.form(key='nlpForm'):
         news = st.text_area("Enter News Title Here", height=100)
-        submit_button = st.form_submit_button(label='Analyze')
+        submit_button = st.form_submit_button(label='Submit')
         
         # Button Analyize On-click :
         if submit_button:
@@ -60,44 +61,37 @@ if choose == "Single Data":
             # Output Status Request
             st.write('Judul berita ini termasuk ke dalam topik: ', predict.text)
 
-## Request Analyize Article for Spesific Emiten.
+## UI for Predict multiple data
 elif choose == "Data Collection":
-    st.markdown(""" <style> .font {
-        font-size:35px ; font-family: 'Cooper Black'; color: #FF9633;}
-        span[data-baseweb="tag"]{background-color: #95e85a !important;} 
-        </style> """, unsafe_allow_html=True)
-    st.markdown('<p class="font">News Topic Classification</p>', unsafe_allow_html=True)    
-    st.subheader("Indonesian Language News Topic Multiclassification")
-    
     st.caption("Predict Data Collection")
 
     csv=None
 
     with st.form(key='nlpForm'):
         uploaded_file = st.file_uploader("Choose a CSV file")
-        # news = st.text_area("Enter Article Here", height=200)
-        submit_button = st.form_submit_button(label='Analyze')
+        submit_button = st.form_submit_button(label='Submit')
 
         # Button Analyize On-click :
         if submit_button:
             st.info("Results")
+            # Read input file
             dataframe = pd.read_csv(uploaded_file)
+            # Predict Function
             predict_label = analyze_data_collection(dataframe['title'].values)
 
-            # Remove the opening and closing brackets and split the string by whitespace
-            elements = predict_label.text[2:-2].split(",")
-
             # Convert the elements into a list
+            elements = predict_label.text[2:-2].split(",")
             array_predict_label = [element.replace("'","") for element in elements]
 
+            # Show result
             dataframe['label']=array_predict_label
             dataframe['title'] = dataframe['title'].str.strip()
+
+            # Write result to csv
             csv = dataframe.to_csv().encode('utf-8')
-            
             st.write(dataframe) 
 
-    # try:
-        # Check if the variable is defined
+    # Section where the user can download the output
     if csv is not None:
             st.download_button(
             label="Download data as CSV",
@@ -107,4 +101,5 @@ elif choose == "Data Collection":
         )  
     else:
             print("Data is not defined.")
-         
+
+# End of Line - main.py #
